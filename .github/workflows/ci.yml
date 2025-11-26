@@ -1,0 +1,62 @@
+name: Java Maven CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  push:
+    tags:
+      - "v*"
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: 885554903941.dkr.ecr.us-east-1.amazonaws.com/java-maven-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Set up Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # ---- Determine Dynamic Version ----
+    - name: Set IMAGE_TAG
+      id: vars
+      run: |
+        if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+          # If pushing a Git tag (e.g., v1.2.0), use that
+          echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+        else
+          # Otherwise use dynamic version from run number
+          echo "IMAGE_TAG=1.0.${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+        fi
+
+    - name: Show tag
+      run: echo "Using tag: $IMAGE_TAG"
+
+    # ---- Configure AWS ----
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    # ---- Build Docker Image ----
+    - name: Build Docker image
+      run: |
+        docker build -t my-java-app:${IMAGE_TAG} .
+        docker tag my-java-app:${IMAGE_TAG} $ECR_REPO:${IMAGE_TAG}
+
+    # ---- Push to ECR ----
+    - name: Push image
+      run: docker push $ECR_REPO:${IMAGE_TAG}
