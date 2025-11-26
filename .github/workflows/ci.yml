@@ -37,7 +37,7 @@ jobs:
         fi
 
     - name: Show tag
-      run: echo "Using tag: $IMAGE_TAG"
+      run: echo "Using tag $IMAGE_TAG"
 
     # ---- Configure AWS ----
     - name: Configure AWS credentials
