@@ -18,7 +18,7 @@ Clone the repository:
 
 ```bash
 git clone <repository_url>
-cd my-java-app
+cd java_maven_app
 ```
 
 Build the JAR with Maven:
@@ -74,4 +74,4 @@ curl http://localhost:8080
 
 ## License
 
-MIT License
+
